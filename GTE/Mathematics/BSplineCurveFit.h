@@ -24,7 +24,7 @@ namespace gte
         // The samples points are contiguous blocks of 'dimension' real values
         // stored in sampleData.
         BSplineCurveFit(int32_t dimension, int32_t numSamples, Real const* sampleData,
-            int32_t degree, int32_t numControls)
+            int32_t degree, int32_t numControls, std::vector<Real> times = {})
             :
             mDimension(dimension),
             mNumSamples(numSamples),
@@ -66,6 +66,15 @@ namespace gte
             Real t;
             int32_t i0, i1, i2, imin, imax, j;
 
+			if(times.size() == 0)
+			{
+				times.reserve(mNumSamples);
+				for (i2 = 0; i2 < mNumSamples; ++i2) {
+					t = tMultiplier * (Real) i2;
+					times.push_back(t);
+				}
+			}
+
             // Construct the matrix A^T*A.
             int32_t degp1 = mDegree + 1;
             int32_t numBands = (mNumControls > degp1 ? degp1 : mDegree);
@@ -88,7 +97,7 @@ namespace gte
                     Real value = (Real)0;
                     for (i2 = 0; i2 < mNumSamples; ++i2)
                     {
-                        t = tMultiplier * (Real)i2;
+                        t = times[i2];
                         mBasis.Evaluate(t, 0, imin, imax);
                         if (imin <= i0 && i0 <= imax && imin <= i1 && i1 <= imax)
                         {
@@ -108,7 +117,7 @@ namespace gte
             {
                 for (i1 = 0; i1 < mNumSamples; ++i1)
                 {
-                    t = tMultiplier * (Real)i1;
+                    t = times[i2];
                     mBasis.Evaluate(t, 0, imin, imax);
                     if (imin <= i0 && i0 <= imax)
                     {
