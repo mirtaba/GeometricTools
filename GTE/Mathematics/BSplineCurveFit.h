@@ -117,7 +117,7 @@ namespace gte
             {
                 for (i1 = 0; i1 < mNumSamples; ++i1)
                 {
-                    t = times[i2];
+                    t = times[i1];
                     mBasis.Evaluate(t, 0, imin, imax);
                     if (imin <= i0 && i0 <= imax)
                     {
