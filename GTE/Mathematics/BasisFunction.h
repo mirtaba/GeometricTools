@@ -184,9 +184,11 @@ namespace gte
                 mUniqueKnots.begin());
 
             Real u = mUniqueKnots.front().t;
+            std::cout << u << std::endl;
             for (int32_t i = 1; i < input.numUniqueKnots - 1; ++i)
             {
                 Real uNext = mUniqueKnots[i].t;
+                std::cout << uNext << std::endl;
                 LogAssert(u < uNext, "Unique knots are not strictly increasing.");
                 u = uNext;
             }

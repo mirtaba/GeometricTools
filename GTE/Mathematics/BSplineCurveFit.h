@@ -24,7 +24,7 @@ namespace gte
         // The samples points are contiguous blocks of 'dimension' real values
         // stored in sampleData.
         BSplineCurveFit(int32_t dimension, int32_t numSamples, Real const* sampleData,
-            int32_t degree, int32_t numControls, std::vector<Real> times = {}, bool followCompactness = false)
+            int32_t degree, int32_t numControls, std::vector<Real> times = {}, bool followCompactness = false, bool sameNumberPerPart = false)
             :
             mDimension(dimension),
             mNumSamples(numSamples),
@@ -37,6 +37,7 @@ namespace gte
             LogAssert(1 <= degree && degree < numControls, "Invalid degree.");
             LogAssert(sampleData, "Invalid sample data.");
             LogAssert(numControls <= numSamples - degree - 1, "Invalid number of controls.");
+            LogAssert(followCompactness ^ sameNumberPerPart, "Invalid commands");
 
             BasisFunctionInput<Real> input;
             input.numControls = numControls;
@@ -51,6 +52,14 @@ namespace gte
             Real factor = ((Real)1) / (Real)last;
             for (int32_t i = 1; i < last; ++i)
             {
+                if(sameNumberPerPart)
+                {
+                    Real newFactor = ((Real)1) / input.numUniqueKnots;
+                    int index = (i * newFactor) * times.size();
+                    input.uniqueKnots[i].t = times[index];
+                    input.uniqueKnots[i].multiplicity = 1;
+                }
+                else
                 if(followCompactness)
                 {
                     Real newFactor = ((Real)1) / (Real)times.size();
