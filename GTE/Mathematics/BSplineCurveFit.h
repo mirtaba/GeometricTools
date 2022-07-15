@@ -24,7 +24,7 @@ namespace gte
         // The samples points are contiguous blocks of 'dimension' real values
         // stored in sampleData.
         BSplineCurveFit(int32_t dimension, int32_t numSamples, Real const* sampleData,
-            int32_t degree, int32_t numControls, std::vector<Real> times = {}, bool followCompactness = false, bool sameNumberPerPart = false)
+            int32_t degree, int32_t numControls, std::vector<Real> times = {}, bool useInhouseMethod = false)
             :
             mDimension(dimension),
             mNumSamples(numSamples),
@@ -37,48 +37,42 @@ namespace gte
             LogAssert(1 <= degree && degree < numControls, "Invalid degree.");
             LogAssert(sampleData, "Invalid sample data.");
             LogAssert(numControls <= numSamples - degree - 1, "Invalid number of controls.");
-            LogAssert(followCompactness ^ sameNumberPerPart, "Invalid commands");
 
             BasisFunctionInput<Real> input;
             input.numControls = numControls;
             input.degree = degree;
             input.uniform = true;
             input.periodic = false;
-            input.numUniqueKnots = numControls - degree + 1;
+            if(useInhouseMethod)
+                input.numUniqueKnots = numControls + degree - 1;
+            else
+                input.numUniqueKnots = numControls - degree + 1;
             input.uniqueKnots.resize(input.numUniqueKnots);
             input.uniqueKnots[0].t = (Real)0;
-            input.uniqueKnots[0].multiplicity = degree + 1;
+            if(useInhouseMethod)
+                input.uniqueKnots[0].multiplicity = 1;
+            else
+                input.uniqueKnots[0].multiplicity = degree + 1;
             int32_t last = input.numUniqueKnots - 1;
-            Real factor = ((Real)1) / (Real)last;
+            Real factor;
+            factor = ((Real)1) / (Real)last;
             for (int32_t i = 1; i < last; ++i)
             {
-                if(sameNumberPerPart)
-                {
-                    Real newFactor = ((Real)1) / input.numUniqueKnots;
-                    int index = (i * newFactor) * times.size();
-                    input.uniqueKnots[i].t = times[index];
-                    input.uniqueKnots[i].multiplicity = 1;
-                }
-                else
-                if(followCompactness)
-                {
-                    Real newFactor = ((Real)1) / (Real)times.size();
-                    int full = (i * factor)/ newFactor;
+                
+                input.uniqueKnots[i].t = factor * (Real) i;
+                input.uniqueKnots[i].multiplicity = 1;
 
-                    double remainder = (i * factor) - (full * newFactor);
-
-                    input.uniqueKnots[i].t = times[full]+(times[full+1] - times[full]) * remainder;
-                    input.uniqueKnots[i].multiplicity = 1;
-
-                }
-                else
-                {
-                    input.uniqueKnots[i].t = factor * (Real) i;
-                    input.uniqueKnots[i].multiplicity = 1;
-                }
             }
             input.uniqueKnots[last].t = (Real)1;
-            input.uniqueKnots[last].multiplicity = degree + 1;
+            if(useInhouseMethod)
+            {
+                input.uniqueKnots[last].multiplicity = 1;
+            }
+            else
+            {
+                input.uniqueKnots[last].multiplicity = degree + 1;
+            }
+            
             mBasis.Create(input);
 
             // Fit the data points with a B-spline curve using a least-squares
